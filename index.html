@@ -94,6 +94,22 @@ body {
 .playlist-wrap { max-height: 240px; overflow-y: auto; padding: 0 28px 20px; scrollbar-width: thin; scrollbar-color: var(--surface2) transparent; }
 .playlist-wrap::-webkit-scrollbar { width: 4px; }
 .playlist-wrap::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
+/* イコライザー */
+.eq-section { border-top: 1px solid rgba(255,255,255,0.04); padding: 14px 28px; background: var(--surface); }
+.eq-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+.eq-title { font-size: 11px; font-weight: 500; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
+.eq-toggle-icon { font-size: 12px; color: var(--muted); transition: transform 0.2s; display: inline-block; }
+.eq-toggle-icon.open { transform: rotate(180deg); }
+.eq-body { display: none; margin-top: 14px; }
+.eq-body.open { display: block; }
+.eq-bands { display: flex; justify-content: space-between; gap: 4px; align-items: flex-end; margin-bottom: 10px; }
+.eq-band { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+.eq-val { font-size: 9px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.eq-slider { writing-mode: vertical-lr; direction: rtl; appearance: none; width: 4px; height: 80px; border-radius: 4px; cursor: pointer; outline: none; background: linear-gradient(to top, var(--accent) 50%, var(--surface2) 50%); }
+.eq-slider::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
+.eq-freq { font-size: 9px; color: var(--muted); }
+.eq-reset { display: block; width: 100%; background: var(--surface2); border: 1px solid rgba(255,255,255,0.06); color: var(--muted); font-size: 11px; font-family: 'DM Sans', sans-serif; padding: 6px; border-radius: 10px; cursor: pointer; transition: color 0.15s; margin-top: 4px; }
+.eq-reset:hover { color: var(--text); }
 .playlist-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: background 0.12s; margin-bottom: 2px; }
 .playlist-item:hover { background: var(--surface); }
 .playlist-item.active { background: var(--surface2); }
@@ -160,6 +176,16 @@ body {
       <span class="vol-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></span>
     </div>
   </div>
+  <div class="eq-section" id="eqSection">
+    <div class="eq-header" id="eqHeader">
+      <span class="eq-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:6px"><path d="M10 9h4V6h3v3h3v2h-3v3h-3v-3h-4v3H7v-3H4V9h3V6h3v3zm-3 9v-3H4v-2h3v-3h3v3h4v-3h3v3h3v2h-3v3h-3v-3h-4v3H7z"/></svg>EQUALIZER</span>
+      <span class="eq-toggle-icon" id="eqIcon">▼</span>
+    </div>
+    <div class="eq-body" id="eqBody">
+      <div class="eq-bands" id="eqBands"></div>
+      <button class="eq-reset" id="eqReset">RESET</button>
+    </div>
+  </div>
   <div class="file-wrap">
     <input type="file" id="files" accept="audio/*" multiple hidden>
     <label class="file-label" for="files">
@@ -200,21 +226,52 @@ document.addEventListener("visibilitychange",()=>{
 // iOS判定
 const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
 
-// ビジュアライザー（iOS以外のみ）
+// ビジュアライザー＆イコライザー（iOS以外のみ）
 const canvas=document.getElementById("visualizer"),ctx=canvas.getContext("2d");
 let audioCtx,analyser;
+const EQ_BANDS=[60,170,310,600,1000,3000,6000,12000,14000,16000],filters=[];
+
+if(isIOS){
+  document.querySelector(".visualizer-wrap").style.display="none";
+  document.getElementById("eqSection").style.display="none";
+} else {
+  // EQ UI生成
+  const eqBandsEl=document.getElementById("eqBands");
+  EQ_BANDS.forEach((freq,i)=>{
+    const lbl=freq>=1000?`${freq/1000}k`:`${freq}`;
+    const band=document.createElement("div"); band.className="eq-band";
+    band.innerHTML=`<span class="eq-val" id="eqVal${i}">0dB</span><input type="range" class="eq-slider" min="-12" max="12" value="0" step="0.5" id="eqSlider${i}"><span class="eq-freq">${lbl}</span>`;
+    eqBandsEl.appendChild(band);
+    const sl=document.getElementById(`eqSlider${i}`),vl=document.getElementById(`eqVal${i}`);
+    sl.oninput=()=>{const v=parseFloat(sl.value);vl.textContent=(v>=0?"+":"")+v+"dB";if(filters[i])filters[i].gain.value=v;updateEqColor(sl);};
+    updateEqColor(sl);
+  });
+  document.getElementById("eqReset").onclick=()=>{EQ_BANDS.forEach((_,i)=>{const s=document.getElementById(`eqSlider${i}`),v=document.getElementById(`eqVal${i}`);s.value=0;v.textContent="0dB";if(filters[i])filters[i].gain.value=0;updateEqColor(s);});};
+  document.getElementById("eqHeader").onclick=()=>{document.getElementById("eqBody").classList.toggle("open");document.getElementById("eqIcon").classList.toggle("open");};
+}
+
+function updateEqColor(sl){
+  const v=parseFloat(sl.value),pct=((v+12)/24)*100;
+  const c=v>0?"var(--accent)":v<0?"var(--accent2)":"var(--muted)";
+  sl.style.background=`linear-gradient(to top,${c} ${pct}%,var(--surface2) ${pct}%)`;
+}
+
 function initVisualizer(){
   if(audioCtx||isIOS)return;
   audioCtx=new(window.AudioContext||window.webkitAudioContext)();
   analyser=audioCtx.createAnalyser(); analyser.fftSize=256;
   const src=audioCtx.createMediaElementSource(audio);
-  src.connect(analyser); analyser.connect(audioCtx.destination);
+  let node=src;
+  EQ_BANDS.forEach((freq,i)=>{
+    const f=audioCtx.createBiquadFilter();
+    f.type=i===0?"lowshelf":i===EQ_BANDS.length-1?"highshelf":"peaking";
+    f.frequency.value=freq; f.gain.value=0; filters.push(f);
+    node.connect(f); node=f;
+  });
+  node.connect(analyser); analyser.connect(audioCtx.destination);
 }
 function resizeCanvas(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;}
 resizeCanvas(); window.addEventListener("resize",resizeCanvas);
-if(isIOS){
-  document.querySelector(".visualizer-wrap").style.display="none";
-}
 function drawVisualizer(){
   requestAnimationFrame(drawVisualizer);
   if(!analyser){ctx.clearRect(0,0,canvas.width,canvas.height);return;}
