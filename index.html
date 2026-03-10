@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Sqotify Test</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080a0f; --card: #0d1117; --surface: #161b27; --surface2: #1e2536;
+  --accent: #00e5ff; --accent2: #ff3cac; --accent3: #7b2fff;
+  --text: #e8eaf0; --muted: #6b7280; --glow: rgba(0,229,255,0.25);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  min-height: 100vh; background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif; display: flex;
+  justify-content: center; align-items: center; padding: 16px;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(123,47,255,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(0,229,255,0.08) 0%, transparent 60%);
+}
+.player {
+  width: 100%; max-width: 480px; background: var(--card);
+  border-radius: 28px; border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 0 0 1px rgba(0,229,255,0.05), 0 40px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
+  overflow: hidden;
+}
+.header {
+  padding: 22px 28px 18px; display: flex; justify-content: space-between;
+  align-items: center; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.logo {
+  font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 3px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.track-count { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.visualizer-wrap { padding: 0 28px; height: 72px; }
+#visualizer { width: 100%; height: 72px; display: block; }
+.now-playing { padding: 12px 28px 14px; min-height: 60px; }
+.track-name { font-size: 17px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+.track-sub { font-size: 12px; color: var(--muted); }
+.seek-wrap { padding: 0 28px 8px; }
+.seek-bar {
+  width: 100%; appearance: none; height: 4px; border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--surface2) 0%);
+  cursor: pointer; outline: none; margin-bottom: 7px; transition: height 0.15s;
+}
+.seek-bar:hover { height: 6px; }
+.seek-bar::-webkit-slider-thumb {
+  appearance: none; width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; box-shadow: 0 0 8px var(--accent); cursor: pointer;
+}
+.time-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.controls { padding: 10px 28px 20px; display: flex; justify-content: center; align-items: center; gap: 16px; }
+.ctrl-btn {
+  background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer;
+  padding: 10px; border-radius: 50%; transition: color 0.15s, background 0.15s, transform 0.1s;
+  display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+}
+.ctrl-btn:hover { color: var(--text); background: var(--surface); }
+.ctrl-btn:active { transform: scale(0.9); }
+.play-btn {
+  width: 64px; height: 64px; font-size: 26px;
+  background: linear-gradient(135deg, var(--accent3), var(--accent));
+  color: #fff; border-radius: 50%;
+  box-shadow: 0 0 24px var(--glow), 0 8px 20px rgba(0,0,0,0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.play-btn:hover { transform: scale(1.06); background: linear-gradient(135deg, var(--accent3), var(--accent)); color: #fff; }
+.bottom-row { padding: 14px 28px; background: var(--surface); display: flex; flex-direction: column; gap: 14px; border-top: 1px solid rgba(255,255,255,0.04); }
+.modes { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.mode-btn {
+  background: var(--surface2); border: 1px solid rgba(255,255,255,0.06);
+  color: var(--muted); font-size: 11px; font-family: 'DM Sans', sans-serif;
+  font-weight: 500; letter-spacing: 0.5px; padding: 6px 12px;
+  border-radius: 20px; cursor: pointer; transition: all 0.15s;
+}
+.mode-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+.mode-btn.on { background: transparent; color: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px rgba(0,229,255,0.2); }
+.volume-row { display: flex; align-items: center; gap: 10px; }
+.vol-icon { font-size: 15px; color: var(--muted); flex-shrink: 0; }
+.vol-slider { flex: 1; appearance: none; height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--accent2) 70%, var(--surface2) 70%); cursor: pointer; outline: none; }
+.vol-slider::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #fff; cursor: pointer; }
+.file-wrap { padding: 16px 28px; border-top: 1px solid rgba(255,255,255,0.04); }
+.file-label {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  padding: 13px; background: var(--surface2); border: 1px dashed rgba(255,255,255,0.12);
+  border-radius: 14px; cursor: pointer; color: var(--muted); font-size: 14px;
+  font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+}
+.file-label:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,0.05); }
+.playlist-wrap { max-height: 240px; overflow-y: auto; padding: 0 28px 20px; scrollbar-width: thin; scrollbar-color: var(--surface2) transparent; }
+.playlist-wrap::-webkit-scrollbar { width: 4px; }
+.playlist-wrap::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
+.playlist-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: background 0.12s; margin-bottom: 2px; }
+.playlist-item:hover { background: var(--surface); }
+.playlist-item.active { background: var(--surface2); }
+.playlist-item.active .item-name { color: var(--accent); }
+.item-num { font-size: 12px; color: var(--muted); width: 20px; text-align: right; flex-shrink: 0; }
+.item-name { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); flex: 1; }
+.item-playing { color: var(--accent); font-size: 12px; flex-shrink: 0; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@media (max-width: 480px) {
+  body { padding: 0; align-items: flex-end; }
+  .player { border-radius: 28px 28px 0 0; max-width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="player">
+  <div class="header">
+    <div class="logo">Sqotify</div>
+    <div class="track-count" id="trackCount">NO TRACKS</div>
+  </div>
+  <div class="visualizer-wrap">
+    <canvas id="visualizer"></canvas>
+  </div>
+  <div class="now-playing">
+    <div class="track-name" id="trackName">曲を選択してください</div>
+    <div class="track-sub" id="trackSub">—</div>
+  </div>
+  <div class="seek-wrap">
+    <input type="range" class="seek-bar" id="seek" min="0" max="100" value="0">
+    <div class="time-row">
+      <span id="timeElapsed">0:00</span>
+      <span id="timeRemain">-0:00</span>
+    </div>
+  </div>
+  <div class="controls">
+    <button class="ctrl-btn" id="prev">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+    </button>
+    <button class="ctrl-btn play-btn" id="play">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <button class="ctrl-btn" id="next">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm8.5-6v6h2V6h-2v6z"/></svg>
+    </button>
+  </div>
+  <div class="bottom-row">
+    <div class="modes">
+      <button class="mode-btn" id="shuffle">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+        SHUFFLE
+      </button>
+      <button class="mode-btn" id="loopAll">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+        LOOP ALL
+      </button>
+      <button class="mode-btn" id="loopOne">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1l-2 1v1h1.5v4H13z"/></svg>
+        LOOP ONE
+      </button>
+    </div>
+    <div class="volume-row">
+      <span class="vol-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.5 12A4.5 4.5 0 0 0 16 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5zm7-.17v6.34L9.83 13H7v-2h2.83L12 8.83z"/></svg></span>
+      <input type="range" class="vol-slider" id="volume" min="0" max="1" step="0.01" value="0.7">
+      <span class="vol-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></span>
+    </div>
+  </div>
+  <div class="file-wrap">
+    <input type="file" id="files" accept="audio/*" multiple hidden>
+    <label class="file-label" for="files">
+      <span><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></span>
+      <span id="fileLabel">SELECT MUSIC FILES</span>
+    </label>
+  </div>
+  <audio id="audio"></audio>
+  <div class="playlist-wrap" id="playlist"></div>
+</div>
+<script>
+const audio=document.getElementById("audio"),filesInput=document.getElementById("files"),playlistEl=document.getElementById("playlist");
+const playBtn=document.getElementById("play"),prevBtn=document.getElementById("prev"),nextBtn=document.getElementById("next");
+const shuffleBtn=document.getElementById("shuffle"),loopOneBtn=document.getElementById("loopOne"),loopAllBtn=document.getElementById("loopAll");
+const seek=document.getElementById("seek"),volume=document.getElementById("volume");
+const trackName=document.getElementById("trackName"),trackSub=document.getElementById("trackSub"),trackCount=document.getElementById("trackCount");
+const fileLabel=document.getElementById("fileLabel"),timeElapsed=document.getElementById("timeElapsed"),timeRemain=document.getElementById("timeRemain");
+
+let tracks=[],current=0,shuffle=false,loopOne=false,loopAll=false;
+audio.volume=0.7; updateVolSlider();
+
+// Media Session API
+if("mediaSession"in navigator){
+  navigator.mediaSession.setActionHandler("play",()=>audio.play());
+  navigator.mediaSession.setActionHandler("pause",()=>audio.pause());
+  navigator.mediaSession.setActionHandler("previoustrack",()=>prevTrack());
+  navigator.mediaSession.setActionHandler("nexttrack",()=>nextTrack());
+  navigator.mediaSession.setActionHandler("seekto",(e)=>{if(e.seekTime!==null)audio.currentTime=e.seekTime;});
+}
+
+// バックグラウンド対策
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="hidden"&&audio.paused===false){
+    audio.play().catch(()=>{});
+  }
+});
+
+// ビジュアライザー（EQなし）
+const canvas=document.getElementById("visualizer"),ctx=canvas.getContext("2d");
+let audioCtx,analyser;
+function initVisualizer(){
+  if(audioCtx)return;
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  analyser=audioCtx.createAnalyser(); analyser.fftSize=256;
+  const src=audioCtx.createMediaElementSource(audio);
+  src.connect(analyser); analyser.connect(audioCtx.destination);
+}
+function resizeCanvas(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;}
+resizeCanvas(); window.addEventListener("resize",resizeCanvas);
+function drawVisualizer(){
+  requestAnimationFrame(drawVisualizer);
+  if(!analyser){ctx.clearRect(0,0,canvas.width,canvas.height);return;}
+  const buf=analyser.frequencyBinCount,data=new Uint8Array(buf);
+  analyser.getByteFrequencyData(data); ctx.clearRect(0,0,canvas.width,canvas.height);
+  const bw=(canvas.width/buf)*2.2; let x=0;
+  for(let i=0;i<buf;i++){
+    const v=data[i]/255,h=v*canvas.height,hue=180+v*160;
+    ctx.fillStyle=`hsla(${hue},100%,60%,${0.5+v*0.5})`;
+    ctx.beginPath(); ctx.roundRect(x,canvas.height-h,Math.max(bw-1,1),h,2); ctx.fill(); x+=bw+1;
+  }
+}
+drawVisualizer();
+
+filesInput.onchange=()=>{
+  tracks=[...filesInput.files].map(f=>({name:f.name.replace(/\.[^/.]+$/,""),url:URL.createObjectURL(f)}));
+  current=0;
+  fileLabel.textContent=`${tracks.length} TRACKS LOADED`;
+  trackCount.textContent=`${tracks.length} TRACKS`;
+  loadTrack();
+};
+
+function loadTrack(){
+  if(!tracks.length)return;
+  initVisualizer();
+  if(audioCtx.state==="suspended")audioCtx.resume();
+  audio.src=tracks[current].url;
+  audio.play().catch(e=>console.warn("play拒否:",e));
+  trackName.textContent=tracks[current].name;
+  trackSub.textContent=`Track ${current+1} / ${tracks.length}`;
+  render();
+  if("mediaSession"in navigator){
+    navigator.mediaSession.metadata=new MediaMetadata({
+      title:tracks[current].name,
+      artist:"Sqotify"
+    });
+  }
+}
+
+function render(){
+  playlistEl.innerHTML="";
+  tracks.forEach((t,i)=>{
+    const item=document.createElement("div");
+    item.className="playlist-item"+(i===current?" active":"");
+    item.innerHTML=`
+      <span class="item-num">${i+1}</span>
+      <span class="item-name">${t.name}</span>
+      ${i===current?'<span class="item-playing">▶</span>':""}
+    `;
+    item.onclick=()=>{current=i;loadTrack();};
+    playlistEl.appendChild(item);
+  });
+  const active=playlistEl.querySelector(".active");
+  if(active)active.scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+
+playBtn.onclick=()=>{initVisualizer();if(audioCtx.state==="suspended")audioCtx.resume();audio.paused?audio.play():audio.pause();};
+audio.onplay=()=>playBtn.innerHTML='<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+audio.onpause=()=>playBtn.innerHTML='<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+
+audio.ontimeupdate=()=>{
+  const p=(audio.currentTime/audio.duration)*100||0;
+  seek.value=p; seek.style.background=`linear-gradient(90deg,var(--accent) ${p}%,var(--surface2) ${p}%)`;
+  timeElapsed.textContent=fmt(audio.currentTime);
+  const rem=audio.duration-audio.currentTime;
+  timeRemain.textContent=isNaN(rem)?"-0:00":`-${fmt(rem)}`;
+  if("mediaSession"in navigator&&audio.duration&&!isNaN(audio.duration)){
+    try{navigator.mediaSession.setPositionState({duration:audio.duration,playbackRate:audio.playbackRate,position:audio.currentTime});}catch(e){}
+  }
+};
+
+seek.oninput=()=>{audio.currentTime=(seek.value/100)*audio.duration;};
+audio.onended=()=>{if(loopOne){audio.currentTime=0;audio.play();}else nextTrack();};
+
+function nextTrack(){
+  if(!tracks.length)return;
+  if(shuffle)current=Math.floor(Math.random()*tracks.length);
+  else{current++;if(current>=tracks.length){if(loopAll)current=0;else return;}}
+  loadTrack();
+}
+function prevTrack(){if(!tracks.length)return;current=(current-1+tracks.length)%tracks.length;loadTrack();}
+nextBtn.onclick=nextTrack; prevBtn.onclick=prevTrack;
+
+shuffleBtn.onclick=()=>{shuffle=!shuffle;shuffleBtn.classList.toggle("on",shuffle);};
+loopOneBtn.onclick=()=>{loopOne=!loopOne;if(loopOne){loopAll=false;loopAllBtn.classList.remove("on");}loopOneBtn.classList.toggle("on",loopOne);};
+loopAllBtn.onclick=()=>{loopAll=!loopAll;if(loopAll){loopOne=false;loopOneBtn.classList.remove("on");}loopAllBtn.classList.toggle("on",loopAll);};
+
+volume.oninput=()=>{audio.volume=volume.value;updateVolSlider();};
+function updateVolSlider(){const v=volume.value*100;volume.style.background=`linear-gradient(90deg,var(--accent2) ${v}%,var(--surface2) ${v}%)`;}
+function fmt(s){if(isNaN(s))return"0:00";const m=Math.floor(s/60),sec=Math.floor(s%60).toString().padStart(2,"0");return`${m}:${sec}`;}
+</script>
+</body>
+</html>
