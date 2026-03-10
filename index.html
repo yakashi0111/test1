@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Sqotify Test</title>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00e5ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sqotify">
+<link rel="apple-touch-icon" href="icon.png">
+  <title>Sqotify Test</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -361,6 +366,9 @@ loopAllBtn.onclick=()=>{loopAll=!loopAll;if(loopAll){loopOne=false;loopOneBtn.cl
 volume.oninput=()=>{audio.volume=volume.value;updateVolSlider();};
 function updateVolSlider(){const v=volume.value*100;volume.style.background=`linear-gradient(90deg,var(--accent2) ${v}%,var(--surface2) ${v}%)`;}
 function fmt(s){if(isNaN(s))return"0:00";const m=Math.floor(s/60),sec=Math.floor(s%60).toString().padStart(2,"0");return`${m}:${sec}`;}
+  if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./service-worker.js');
+}
 </script>
 </body>
 </html>
