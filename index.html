@@ -197,11 +197,14 @@ document.addEventListener("visibilitychange",()=>{
   }
 });
 
-// ビジュアライザー（EQなし）
+// iOS判定
+const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+
+// ビジュアライザー（iOS以外のみ）
 const canvas=document.getElementById("visualizer"),ctx=canvas.getContext("2d");
 let audioCtx,analyser;
 function initVisualizer(){
-  if(audioCtx)return;
+  if(audioCtx||isIOS)return;
   audioCtx=new(window.AudioContext||window.webkitAudioContext)();
   analyser=audioCtx.createAnalyser(); analyser.fftSize=256;
   const src=audioCtx.createMediaElementSource(audio);
@@ -209,6 +212,9 @@ function initVisualizer(){
 }
 function resizeCanvas(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;}
 resizeCanvas(); window.addEventListener("resize",resizeCanvas);
+if(isIOS){
+  document.querySelector(".visualizer-wrap").style.display="none";
+}
 function drawVisualizer(){
   requestAnimationFrame(drawVisualizer);
   if(!analyser){ctx.clearRect(0,0,canvas.width,canvas.height);return;}
@@ -233,8 +239,7 @@ filesInput.onchange=()=>{
 
 function loadTrack(){
   if(!tracks.length)return;
-  initVisualizer();
-  if(audioCtx.state==="suspended")audioCtx.resume();
+  if(!isIOS){initVisualizer();if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();}
   audio.src=tracks[current].url;
   audio.play().catch(e=>console.warn("play拒否:",e));
   trackName.textContent=tracks[current].name;
@@ -265,7 +270,7 @@ function render(){
   if(active)active.scrollIntoView({block:"nearest",behavior:"smooth"});
 }
 
-playBtn.onclick=()=>{initVisualizer();if(audioCtx.state==="suspended")audioCtx.resume();audio.paused?audio.play():audio.pause();};
+playBtn.onclick=()=>{if(!isIOS){initVisualizer();if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();}audio.paused?audio.play():audio.pause();};
 audio.onplay=()=>playBtn.innerHTML='<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
 audio.onpause=()=>playBtn.innerHTML='<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 
